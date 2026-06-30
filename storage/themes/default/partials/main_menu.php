@@ -167,7 +167,7 @@
         </li>
     <?php else: ?>
         <li class="nav-item">
-            <a class="nav-link" href="<?php echo route('login') ?>"><?php ee('Login') ?></a>
+            <a class="nav-link lv2-login-link" href="<?php echo route('login') ?>"><?php ee('Log in') ?></a>
         </li>
     <?php endif ?>
     <li class="nav-item">

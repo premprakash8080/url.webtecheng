@@ -14,6 +14,11 @@
         <?php if(\Core\Localization::get('rtl')): ?>
             <link rel="stylesheet" href="<?php echo assets('frontend/css/rtl.css') ?>" id="stylesheet">
         <?php endif ?>
+        <!-- Marketing / public-page design system v2 (scoped to .landing-v2) -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+        <link rel="stylesheet" href="<?php echo assets('frontend/css/landing.css') ?>?v=2">
         <?php if(config('font') && !config('cookieconsent')->enabled): ?>
             <link href="https://fonts.googleapis.com/css2?family=<?php echo str_replace(' ', '+', config('font')) ?>:wght@300;400;600" rel="stylesheet">
             <style>body{font-family:'<?php echo config('font') ?>' !important}</style>
@@ -32,7 +37,7 @@
                     <a href="<?php echo route('return') ?>" class="btn btn-light ml-2 btn-xs"><?php ee('Return to my account') ?></a>
                 </div>
             <?php endif ?>
-            <nav class="navbar navbar-main navbar-expand-lg <?php echo themeSettings::config('homestyle', 'light', 'navbar-light bg-white', 'navbar-dark bg-dark') ?>" id="navbar-main">
+            <nav class="navbar navbar-main navbar-expand-lg lv2-nav <?php echo themeSettings::config('homestyle', 'light', 'navbar-light bg-white', 'navbar-dark bg-dark') ?>" id="navbar-main">
                 <div class="container border-0">
                     <a class="navbar-brand" href="<?php echo route('home') ?>" title="<?php echo config('sitename') ?>">
                         <?php if(config('logo')): ?>
@@ -56,9 +61,10 @@
             </nav>
         </header>
 
-        <?php section() ?>
-
-        <?php view('partials.footer') ?>
+        <div class="landing-v2">
+            <?php section() ?>
+            <?php view('partials.footer') ?>
+        </div>
 
         <script src="<?php echo assets('bundle.pack.js') ?>"></script>
         <script src="<?php echo assets('frontend/libs/feather-icons/dist/feather.min.js') ?>"></script>

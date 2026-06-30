@@ -10,6 +10,11 @@
         <link rel="stylesheet" href="<?php echo assets('frontend/libs/select2/dist/css/select2.min.css') ?>">
         <link rel="stylesheet" type="text/css" href="<?php echo assets('frontend/libs/cookieconsent/cookieconsent.css') ?>">
         <link rel="stylesheet" href="<?php echo assets('frontend/css/style'.(request()->cookie('darkmode') || \Helpers\App::themeConfig('homestyle', 'darkmode', true) ? '-dark' : '').'.min.css') ?>" id="stylesheet">
+        <!-- Marketing / public-page design system v2 -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+        <link rel="stylesheet" href="<?php echo assets('frontend/css/landing.css') ?>?v=2">
         <?php if(config('fonts') && !config('cookieconsent')->enabled): ?>
             <link href="https://fonts.googleapis.com/css2?family=<?php echo str_replace(' ', '+', config('font')) ?>:wght@300;400;600" rel="stylesheet">
             <style>body{font-family:'<?php echo config('font') ?>' !important}</style>
@@ -18,7 +23,9 @@
         <?php echo html_entity_decode(config('customheader')) ?>
     </head>
     <body<?php echo \Core\View::bodyClass() ?>>
-        <?php section() ?>               
+        <div class="landing-v2">
+            <?php section() ?>
+        </div>
         <script src="<?php echo assets('bundle.pack.js') ?>"></script>   
         <script src="<?php echo assets('frontend/libs/feather-icons/dist/feather.min.js') ?>"></script>
         <?php if(config('cookieconsent')->enabled): ?>

@@ -1,125 +1,154 @@
-<footer class="position-relative" id="footer-main">
-    <div class="footer pt-lg-7 <?php echo themeSettings::config('homestyle', 'light', 'bg-white border-top', 'footer-dark bg-section-dark') ?>">
-        <div class="container pt-4">
-            <div class="row justify-content-center">
-                <div class="col-lg-12">
-                    <div class="row align-items-center">
-                        <div class="col-lg-7">
-                            <h3 class="<?php echo themeSettings::config('homestyle', 'light', 'text-dark', 'text-secondary') ?> mb-2"><?php ee('Marketing with confidence.') ?></h3>
-                            <p class="lead mb-0 <?php echo themeSettings::config('homestyle', 'light', 'text-dark', 'text-white') ?> opacity-8">
-                                <?php ee('Start your marketing campaign now and reach your customers efficiently.') ?>
-                            </p>
-                        </div>
-                        <div class="col-lg-5 text-lg-right mt-4 mt-lg-0">
-                            <a href="<?php echo route('register') ?>" class="btn btn-primary my-2 ml-0 ml-sm-3">
-                                <?php ee('Get Started') ?>
-                            </a>
-                        </div>
-                    </div>
+<?php
+/**
+ * Public footer — Landing v2.
+ * Renders inside the .landing-v2 wrapper from layouts/main.php.
+ * Preserves: \Helpers\App::pages('main'|'company'|'policy'|'terms'),
+ *            config('sociallinks'|'facebook'|'twitter'|'helpcenter'|'api'|
+ *                   'affiliate'|'contact'|'report'|'verifylink'|'cookieconsent'),
+ *            route('page'|'help'|'apidocs'|'affiliate'|'contact'|'report'|'links.verify'|'register'),
+ *            \Helpers\App::langs(), \Core\Localization::locale().
+ */
+?>
+<footer class="lv2-footer" id="footer-main">
+    <div class="lv2-container">
+
+        <div class="lv2-footer__grid">
+
+            <!-- Brand column -->
+            <div class="lv2-footer__brand">
+                <a href="<?php echo route('home') ?>" class="lv2-footer__brand-name" aria-label="<?php echo config('sitename') ?>">
+                    <?php if(config('logo')): ?>
+                        <img src="<?php echo uploads(config('logo')) ?>" alt="<?php echo config('sitename') ?>">
+                    <?php else: ?>
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="url(#lv2flogo)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <defs><linearGradient id="lv2flogo" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="#4F46E5"/><stop offset="100%" stop-color="#7C3AED"/></linearGradient></defs>
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                        <?php echo config('sitename') ?>
+                    <?php endif ?>
+                </a>
+                <p class="lv2-footer__desc"><?php echo e(config('description') ?: e('Shorten URLs, build branded bio pages, generate QR codes, and track every click — all from one premium platform.')) ?></p>
+                <div class="lv2-footer__socials" aria-label="<?php echo e('Social links') ?>">
+                    <?php if($facebook = config('facebook')): ?>
+                        <a href="<?php echo $facebook ?>" target="_blank" rel="noopener" aria-label="Facebook"><i class="fab fa-facebook" aria-hidden="true"></i></a>
+                    <?php endif ?>
+                    <?php if($twitter = config('twitter')): ?>
+                        <a href="<?php echo $twitter ?>" target="_blank" rel="noopener" aria-label="X (Twitter)"><i class="fab fa-x-twitter" aria-hidden="true"></i></a>
+                    <?php endif ?>
+                    <?php if(isset(config('sociallinks')->linkedin) && $linkedin = config('sociallinks')->linkedin): ?>
+                        <a href="<?php echo $linkedin ?>" target="_blank" rel="noopener" aria-label="LinkedIn"><i class="fab fa-linkedin" aria-hidden="true"></i></a>
+                    <?php endif ?>
+                    <?php if(isset(config('sociallinks')->instagram) && $instagram = config('sociallinks')->instagram): ?>
+                        <a href="<?php echo $instagram ?>" target="_blank" rel="noopener" aria-label="Instagram"><i class="fab fa-instagram" aria-hidden="true"></i></a>
+                    <?php endif ?>
                 </div>
             </div>
-            <hr class="divider divider-fade divider-dark my-5">
-            <div class="row">
-                <div class="col-lg-4 mb-5 mb-lg-0">
-                    <p class="mt-4 text-sm opacity-8 pr-lg-4"><?php echo e(config('description')) ?></p>
-                    <ul class="nav mt-4">
-                        <?php if($facebook = config('facebook')): ?>
-                            <li class="nav-item">
-                                <a class="nav-link" href="<?php echo $facebook ?>" target="_blank">
-                                    <i class="fab fa-facebook"></i>
-                                </a>
-                            </li>
-                        <?php endif ?>
-                        <?php if($twitter = config('twitter')): ?>
-                            <li class="nav-item">
-                                <a class="nav-link" href="<?php echo $twitter ?>" target="_blank">
-                                    <i class="fab fa-x-twitter"></i>
-                                </a>
-                            </li>
-                        <?php endif ?>
-                        <?php if($instagram = config('sociallinks')->instagram): ?>
-                            <li class="nav-item">
-                                <a class="nav-link" href="<?php echo $instagram ?>" target="_blank">
-                                    <i class="fab fa-instagram"></i>
-                                </a>
-                            </li>
-                        <?php endif ?>
-                        <?php if($linkedin = config('sociallinks')->linkedin): ?>
-                            <li class="nav-item">
-                                <a class="nav-link" href="<?php echo $linkedin ?>" target="_blank">
-                                    <i class="fab fa-linkedin"></i>
-                                </a>
-                            </li>
-                        <?php endif ?>
-                    </ul>
-                </div>
-                <div class="col-lg-4 col-6 col-sm-6 ml-lg-auto mb-5 mb-lg-0">
-                    <h6 class="heading mb-3"><?php ee('Solutions') ?></h6>
-                    <ul class="list-unstyled">
-                        <li><a href="<?php echo route('page.qr') ?>"><?php ee('QR Codes') ?></a></li>
-                        <li><a href="<?php echo route('page.bio') ?>"><?php ee('Bio Profiles') ?></a></li>
-                        <?php foreach(\Helpers\App::pages('main') as $page): ?>
-                            <li><a href="<?php echo route('page', [$page->seo]) ?>"><?php ee($page->name) ?></a></li>
-                        <?php endforeach ?>
-                    </ul>
-                </div>
-                <div class="col-lg-4 col-6 col-sm-6 mb-5 mb-lg-0">
-                    <h6 class="heading mb-3"><?php ee('Company') ?></h6>
-                    <ul class="list-unstyled">
-                        <?php foreach(\Helpers\App::pages('company') as $page): ?>
-                            <li><a href="<?php echo route('page', [$page->seo]) ?>"><?php ee($page->name) ?></a></li>
-                        <?php endforeach ?>
-                        <?php if(config('helpcenter')): ?>
-                        <li class="nav-item"><a class="nav-link" href="<?php echo route('help') ?>"><?php ee('Help Center') ?></a></li>
-                        <?php endif ?>
-                        <?php if(config('api')): ?>
-                            <li class="nav-item"><a class="nav-link" href="<?php echo route('apidocs') ?>"><?php ee('Developer API') ?></a></li>
-                        <?php endif ?>
-                        <?php if(config('pro') && config('affiliate')->enabled): ?>
-                            <li class="nav-item"><a class="nav-link" href="<?php echo route('affiliate') ?>"><?php ee('Affiliate Program') ?></a></li>
-                        <?php endif ?>
-                        <?php if(config('contact')): ?>
-                        <li class="nav-item"><a class="nav-link" href="<?php echo route('contact') ?>"><?php ee('Contact Us') ?></a></li>
-                        <?php endif ?>
-                    </ul>
-                </div>
+
+            <!-- Solutions -->
+            <div>
+                <h6 class="lv2-footer__heading"><?php ee('Solutions') ?></h6>
+                <ul class="lv2-footer__list">
+                    <li><a href="<?php echo route('page.qr') ?>"><?php ee('QR Codes') ?></a></li>
+                    <li><a href="<?php echo route('page.bio') ?>"><?php ee('Bio Pages') ?></a></li>
+                    <?php foreach(\Helpers\App::pages('main') as $page): ?>
+                        <li><a href="<?php echo route('page', [$page->seo]) ?>"><?php ee($page->name) ?></a></li>
+                    <?php endforeach ?>
+                </ul>
             </div>
-            <hr class="divider divider-fade divider-dark my-4">
-            <div class="row align-items-center justify-content-md-between pb-4">
-                <div class="col-md-4">
-                    <div class="copyright text-sm font-weight-bold text-center text-md-left">
-                        &copy; <?php echo date("Y") ?> <a href="<?php echo config('url') ?>" class="font-weight-bold"><?php echo config('sitename') ?></a>. <?php ee('All Rights Reserved') ?>
-                    </div>
-                </div>
-                <div class="col-md-8">
-                    <ul class="nav justify-content-center justify-content-md-end mt-3 mt-md-0">
-                        <?php foreach(\Helpers\App::pages('policy') as $page): ?>
-                            <li class="nav-item"><a class="nav-link" href="<?php echo route('page', [$page->seo]) ?>"><?php ee($page->name) ?></a></li>
-                        <?php endforeach ?>
-                        <?php foreach(\Helpers\App::pages('terms') as $page): ?>
-                            <li class="nav-item"><a class="nav-link" href="<?php echo route('page', [$page->seo]) ?>"><?php ee($page->name) ?></a></li>
-                        <?php endforeach ?>
-                        <?php if(config('report')): ?>
-                        <li class="nav-item"><a class="nav-link" href="<?php echo route('report') ?>"><?php ee('Report') ?></a></li>
-                        <?php endif ?>
-                        <?php if(config('verifylink')): ?>
-                            <li class="nav-item"><a class="nav-link text-dark" href="<?php echo route('links.verify') ?>"><?php ee('Verify Link') ?></a></li>
-                        <?php endif ?>                        
-                        <?php if(config('cookieconsent')->enabled): ?>
-                            <li class="nav-item"><a class="nav-link text-dark" href="" data-cc="c-settings"><?php ee('Cookie Settings') ?></a></li>
-                        <?php endif ?>
-                        <?php if($langs = \Helpers\App::langs()): ?>
-                            <li class="nav-item dropup">
-                                <a class="nav-link" data-toggle="dropdown" href="#"><i data-feather="globe" class="mr-1"></i> <?php echo strtoupper(\Core\Localization::locale()) ?></a>
-                                <ul class="dropdown-menu">
-                                    <?php foreach($langs  as $lang): ?>
-                                        <li><a class="dropdown-item" href="<?php echo url($lang['code']) ?>"><?php echo $lang['name'] ?></a></li>
-                                    <?php endforeach ?>
-                                </ul>
-                            </li>
-                        <?php endif ?>
-                    </ul>
-                </div>
+
+            <!-- Resources -->
+            <div>
+                <h6 class="lv2-footer__heading"><?php ee('Resources') ?></h6>
+                <ul class="lv2-footer__list">
+                    <?php if(config('helpcenter')): ?>
+                        <li><a href="<?php echo route('help') ?>"><?php ee('Help Center') ?></a></li>
+                    <?php endif ?>
+                    <?php if(config('contact')): ?>
+                        <li><a href="<?php echo route('contact') ?>"><?php ee('Contact Us') ?></a></li>
+                    <?php endif ?>
+                    <?php if(config('blog')): ?>
+                        <li><a href="<?php echo route('blog') ?>"><?php ee('Blog') ?></a></li>
+                    <?php endif ?>
+                    <?php if(config('api')): ?>
+                        <li><a href="<?php echo route('apidocs') ?>"><?php ee('Developers') ?></a></li>
+                    <?php endif ?>
+                </ul>
+            </div>
+
+            <!-- Company -->
+            <div>
+                <h6 class="lv2-footer__heading"><?php ee('Company') ?></h6>
+                <ul class="lv2-footer__list">
+                    <?php foreach(\Helpers\App::pages('company') as $page): ?>
+                        <li><a href="<?php echo route('page', [$page->seo]) ?>"><?php ee($page->name) ?></a></li>
+                    <?php endforeach ?>
+                    <?php if(config('pro')): ?>
+                        <li><a href="<?php echo route('pricing') ?>"><?php ee('Pricing') ?></a></li>
+                    <?php endif ?>
+                    <?php if(config('pro') && config('affiliate')->enabled): ?>
+                        <li><a href="<?php echo route('affiliate') ?>"><?php ee('Affiliate') ?></a></li>
+                    <?php endif ?>
+                    <?php foreach(\Helpers\App::pages('policy') as $page): ?>
+                        <li><a href="<?php echo route('page', [$page->seo]) ?>"><?php ee($page->name) ?></a></li>
+                    <?php endforeach ?>
+                    <?php foreach(\Helpers\App::pages('terms') as $page): ?>
+                        <li><a href="<?php echo route('page', [$page->seo]) ?>"><?php ee($page->name) ?></a></li>
+                    <?php endforeach ?>
+                </ul>
+            </div>
+
+            <!-- Newsletter -->
+            <div>
+                <h6 class="lv2-footer__heading"><?php ee('Newsletter') ?></h6>
+                <p class="lv2-newsletter__sub"><?php ee('Get tips, updates, and offers.') ?></p>
+                <form class="lv2-newsletter__form"
+                      action="<?php echo url('server/subscribe') ?>"
+                      method="post"
+                      data-trigger="newsletter-form"
+                      aria-label="<?php echo e('Newsletter signup') ?>">
+                    <input type="email"
+                           class="lv2-newsletter__input"
+                           name="email"
+                           placeholder="<?php echo e('Enter your email') ?>"
+                           required
+                           autocomplete="email">
+                    <button type="submit" class="lv2-newsletter__btn"><?php ee('Subscribe') ?></button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Bottom row -->
+        <div class="lv2-footer__bottom">
+            <div class="lv2-footer__copy">
+                &copy; <?php echo date("Y") ?>
+                <a href="<?php echo config('url') ?>"><?php echo config('sitename') ?></a>.
+                <?php ee('All Rights Reserved') ?>
+            </div>
+
+            <div class="lv2-footer__bottom-links">
+                <?php if(config('report')): ?>
+                    <a href="<?php echo route('report') ?>"><?php ee('Report') ?></a>
+                <?php endif ?>
+                <?php if(config('verifylink')): ?>
+                    <a href="<?php echo route('links.verify') ?>"><?php ee('Verify Link') ?></a>
+                <?php endif ?>
+                <?php if(config('cookieconsent')->enabled): ?>
+                    <a href="#" data-cc="c-settings"><?php ee('Cookie Settings') ?></a>
+                <?php endif ?>
+                <?php if($langs = \Helpers\App::langs()): ?>
+                    <span class="dropup lv2-footer__lang">
+                        <a class="lv2-footer__lang" data-toggle="dropdown" href="#" aria-haspopup="true" aria-expanded="false">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            <?php echo strtoupper(\Core\Localization::locale()) ?>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-right">
+                            <?php foreach($langs as $lang): ?>
+                                <li><a class="dropdown-item" href="<?php echo url($lang['code']) ?>"><?php echo $lang['name'] ?></a></li>
+                            <?php endforeach ?>
+                        </ul>
+                    </span>
+                <?php endif ?>
             </div>
         </div>
     </div>

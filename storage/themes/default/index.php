@@ -1,627 +1,557 @@
 <?php
 /**
  * ===================================================================
- *  Home page — Landing v2 (premium SaaS redesign)
+ *  Home page — Landing v2 (mockup-aligned premium SaaS redesign)
  * -------------------------------------------------------------------
- *  Design goal: Stripe/Linear/Vercel-grade trust signal in the first
- *  second, while preserving every existing app integration.
+ *  PRESERVATION CONTRACT (JS-bound — do not rename without checking
+ *  public/static/frontend/js/app.min.js and server.min.js):
+ *    - <form data-trigger="shorten-form"> POSTs to route('shorten').
+ *    - Field names + IDs: url, custom, pass.
+ *    - Copy button: `.btn-warning.d-none` (toggled by JS on success).
+ *    - Submit button: real <button type="submit">.
+ *    - Result containers: #output-result, #qr-result, #text-result.
+ *    - Captcha is injected by \Helpers\Captcha::display('shorten').
  *
- *  Preservation contract (DO NOT change without checking JS handlers):
- *    - <form method="post" action="route('shorten')" data-trigger="shorten-form">
- *      with field names {url, custom, pass} and ids {url, custom, pass}.
- *    - Submit/copy buttons inside the form: `.btn-warning.d-none` is the
- *      copy button the JS layer toggles; `.btn-success` is the submit
- *      (kept as a real <button type="submit">).
- *    - #output-result, #qr-result, #text-result — JS shows the shortened
- *      URL + QR after a successful POST.
- *    - Captcha is rendered via \Helpers\Captcha::display('shorten').
- *    - All `route()`, `e()`, `ee()`, `config()`, `themeSettings::config()`,
- *      and conditional sections are preserved 1:1.
+ *  The CSS for this page (and all public pages using layouts/main.php)
+ *  is loaded by layouts/main.php — see public/static/frontend/css/landing.css.
+ *  The whole layout is wrapped in `.landing-v2` so styles are scoped.
  *
- *  Scoping: every visual rule lives under `.landing-v2` (loaded only by
- *  this template via View::push), so dashboard / admin / auth styles
- *  are unaffected.
+ *  Visual reference: user-provided mockup (purple/violet brand,
+ *  reservation-style input, bio-page hero mockup, inline stat strip,
+ *  integration row, features + analytics dashboard, CTA banner).
  * ===================================================================
  */
 
-// Load the premium landing CSS only on this page.
-\Core\View::push('<link rel="stylesheet" href="'.assets('frontend/css/landing.css').'?v=1" />', 'custom')->toHeader();
-
-// Preconnect to font CDN to improve LCP for the new Inter typography.
-\Core\View::push('<link rel="preconnect" href="https://fonts.googleapis.com" />', 'custom')->toHeader();
-\Core\View::push('<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />', 'custom')->toHeader();
-\Core\View::push('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />', 'custom')->toHeader();
-
 $_hero_img = (isset($themeconfig->hero) && !empty($themeconfig->hero))
     ? uploads($themeconfig->hero)
-    : assets("images/landing.png");
+    : null;
 ?>
 
-<div class="landing-v2">
+<!-- ============================================================
+     HERO
+     ============================================================ -->
+<section class="lv2-hero" aria-labelledby="lv2-hero-title">
+    <div class="lv2-container">
+        <div class="lv2-hero__grid">
 
-    <!-- ============================================================
-         HERO
-         ============================================================ -->
-    <section class="lv2-hero" aria-labelledby="lv2-hero-title">
-        <div class="lv2-container">
-            <div class="lv2-hero__layout">
-
-                <div class="lv2-hero__copy lv2-fade-up">
-                    <span class="lv2-eyebrow">
-                        <span class="lv2-eyebrow__dot" aria-hidden="true"></span>
-                        <?php ee('Free URL shortener &middot; QR &middot; Bio pages') ?>
+            <div class="lv2-hero__copy lv2-fade-up">
+                <span class="lv2-eyebrow">
+                    <span class="lv2-eyebrow__dot" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-4.2 3.3L16 18l-4-2.6L8 18l1.2-5.7L5 9l5.2-1.4L12 2z"/></svg>
                     </span>
+                    <?php ee('Create. Customize. Share.') ?>
+                </span>
 
-                    <h1 id="lv2-hero-title" class="lv2-hero__title">
-                        <?php ee('Short links that build') ?>
-                        <span class="lv2-gradient-text"><?php ee('your brand') ?></span>
-                    </h1>
+                <h1 id="lv2-hero-title" class="lv2-hero__title">
+                    <?php ee('One link to') ?><br>
+                    <span class="lv2-gradient-text"><?php ee('rule them all.') ?></span>
+                </h1>
 
-                    <p class="lv2-hero__lead">
-                        <?php ee('Shorten any URL in seconds. Add custom aliases, password protection, QR codes, geo &amp; device targeting, and rich analytics — all from one premium dashboard.') ?>
-                    </p>
+                <p class="lv2-hero__lead">
+                    <?php ee('Shorten URLs, build branded bio pages, generate QR codes, and track every click — all from one premium platform that connects your audience to everything you do.') ?>
+                </p>
 
-                    <!-- Flash messages preserved (framework renders alert HTML) -->
-                    <div class="lv2-flash"><?php message() ?></div>
+                <!-- Flash messages preserved -->
+                <div class="lv2-flash"><?php message() ?></div>
 
-                    <!-- Shortener form — JS-bound; field names & IDs frozen -->
-                    <form method="post"
-                          action="<?php echo route('shorten') ?>"
-                          data-trigger="shorten-form"
-                          aria-label="<?php echo e('Shorten a URL') ?>">
+                <!-- Shortener form — JS hooks frozen -->
+                <form method="post"
+                      action="<?php echo route('shorten') ?>"
+                      data-trigger="shorten-form"
+                      aria-label="<?php echo e('Shorten a URL') ?>">
 
-                        <div class="lv2-shortener">
-                            <input type="text"
-                                   class="form-control lv2-shortener__input"
-                                   placeholder="<?php echo e('Paste a long URL — https://example.com/your-long-link') ?>"
-                                   name="url"
-                                   id="url"
-                                   autocomplete="off"
-                                   inputmode="url"
-                                   spellcheck="false"
-                                   required>
-                            <div class="lv2-shortener__actions">
-                                <!-- Copy button: JS toggles `.d-none` after a successful shorten -->
-                                <button class="btn btn-warning d-none lv2-shortener__btn lv2-shortener__btn--copy"
-                                        type="button"><?php ee('Copy') ?></button>
-                                <button class="btn btn-success lv2-shortener__btn" type="submit">
-                                    <?php ee('Shorten') ?>
-                                </button>
-                            </div>
-                        </div>
-
-                        <?php if(!config('pro')): ?>
-                            <a href="#advanced"
-                               data-toggle="collapse"
-                               class="btn btn-xs btn-primary mb-2 lv2-shortener__toggle"
-                               aria-expanded="false"
-                               aria-controls="advanced">
-                                <i data-feather="sliders" aria-hidden="true"></i>
-                                <?php ee('Advanced') ?>
-                            </a>
-                            <div class="collapse" id="advanced">
-                                <div class="lv2-shortener__advanced">
-                                    <div class="lv2-shortener__field">
-                                        <label for="custom"><?php ee('Custom alias') ?></label>
-                                        <input type="text"
-                                               class="form-control"
-                                               name="custom"
-                                               id="custom"
-                                               placeholder="<?php echo e('your-brand') ?>"
-                                               autocomplete="off">
-                                    </div>
-                                    <div class="lv2-shortener__field">
-                                        <label for="pass"><?php ee('Password protection') ?></label>
-                                        <input type="text"
-                                               class="form-control"
-                                               name="pass"
-                                               id="pass"
-                                               placeholder="<?php echo e('Optional password') ?>"
-                                               autocomplete="off">
-                                    </div>
-                                </div>
-                            </div>
-                        <?php endif ?>
-
-                        <?php if(!\Core\Auth::logged()) { echo \Helpers\Captcha::display('shorten'); } ?>
-                    </form>
-
-                    <!-- Result container — JS targets these IDs, must remain -->
-                    <div id="output-result" class="lv2-shorten-result d-none" role="status" aria-live="polite">
-                        <div class="row">
-                            <div id="qr-result" class="col-md-4 p-2"></div>
-                            <div id="text-result" class="col-md-8">
-                                <p class="mb-3"><?php ee('Your link has been successfully shortened. Want more customization options?') ?></p>
-                                <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--primary lv2-btn--sm"><?php ee('Get started') ?></a>
-                            </div>
-                        </div>
+                    <div class="lv2-domain-input">
+                        <span class="lv2-domain-input__leading" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                            </svg>
+                        </span>
+                        <input type="text"
+                               class="form-control lv2-domain-input__field"
+                               name="url"
+                               id="url"
+                               placeholder="<?php echo e('Paste a long URL') ?>"
+                               autocomplete="off"
+                               inputmode="url"
+                               spellcheck="false"
+                               required>
+                        <!-- Copy button: JS toggles `.d-none` after successful shorten -->
+                        <button class="btn btn-warning d-none lv2-domain-input__btn"
+                                type="button"
+                                aria-label="<?php echo e('Copy short link') ?>"><?php ee('Copy') ?></button>
+                        <button class="btn btn-success lv2-domain-input__btn"
+                                type="submit"><?php ee('Shorten') ?></button>
                     </div>
 
-                    <!-- Trust pills -->
-                    <ul class="lv2-trust" aria-label="<?php echo e('Why people trust us') ?>">
-                        <li class="lv2-trust__item">
-                            <span class="lv2-trust__check" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            </span>
-                            <?php ee('No credit card required') ?>
-                        </li>
-                        <li class="lv2-trust__item">
-                            <span class="lv2-trust__check" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            </span>
-                            <?php ee('Free forever plan') ?>
-                        </li>
-                        <li class="lv2-trust__item">
-                            <span class="lv2-trust__check" aria-hidden="true">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                            </span>
-                            <?php ee('Setup in seconds') ?>
-                        </li>
-                    </ul>
+                    <?php if(!config('pro')): ?>
+                        <details class="lv2-details" style="margin-top: 8px;">
+                            <summary style="cursor:pointer; font-size: 12px; color: var(--lv2-text-3); font-weight: 600; padding: 6px 0;">
+                                <?php ee('Advanced options') ?>
+                            </summary>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+                                <div>
+                                    <label for="custom" style="display:block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--lv2-text-2);"><?php ee('Custom alias') ?></label>
+                                    <input type="text"
+                                           class="form-control lv2-newsletter__input"
+                                           name="custom"
+                                           id="custom"
+                                           placeholder="<?php echo e('your-brand') ?>"
+                                           autocomplete="off">
+                                </div>
+                                <div>
+                                    <label for="pass" style="display:block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--lv2-text-2);"><?php ee('Password protection') ?></label>
+                                    <input type="text"
+                                           class="form-control lv2-newsletter__input"
+                                           name="pass"
+                                           id="pass"
+                                           placeholder="<?php echo e('Optional password') ?>"
+                                           autocomplete="off">
+                                </div>
+                            </div>
+                        </details>
+                    <?php endif ?>
+
+                    <?php if(!\Core\Auth::logged()) { echo \Helpers\Captcha::display('shorten'); } ?>
+                </form>
+
+                <!-- Result container — JS targets these IDs, must remain -->
+                <div id="output-result" class="d-none" role="status" aria-live="polite" style="margin-top: var(--lv2-space-5); padding: var(--lv2-space-5); border-radius: var(--lv2-radius-md); background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.3);">
+                    <div class="row">
+                        <div id="qr-result" class="col-md-4 p-2"></div>
+                        <div id="text-result" class="col-md-8">
+                            <p style="margin-bottom: 12px; font-size: 14px;"><?php ee('Your link has been successfully shortened. Want more customization options?') ?></p>
+                            <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--primary lv2-btn--sm"><?php ee('Get started') ?></a>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="lv2-hero__visual lv2-fade-up lv2-fade-up--d2" aria-hidden="true">
+                <!-- Trust checkpills -->
+                <div class="lv2-trust-row" aria-label="<?php echo e('Why people trust us') ?>">
+                    <span class="lv2-trust-row__item">
+                        <span class="lv2-trust-row__check" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        <?php ee('Free Forever') ?>
+                    </span>
+                    <span class="lv2-trust-row__item">
+                        <span class="lv2-trust-row__check" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        <?php ee('No Credit Card') ?>
+                    </span>
+                    <span class="lv2-trust-row__item">
+                        <span class="lv2-trust-row__check" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        </span>
+                        <?php ee('Easy to Use') ?>
+                    </span>
+                </div>
+
+                <!-- Hero CTAs -->
+                <div class="lv2-hero__ctas">
+                    <?php if(!\Core\Auth::logged() && config("user") && !config("private") && !config("maintenance")): ?>
+                        <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--primary lv2-btn--lg">
+                            <?php ee('Get Started — It\'s Free') ?>
+                        </a>
+                    <?php elseif(\Core\Auth::logged()): ?>
+                        <a href="<?php echo route('dashboard') ?>" class="lv2-btn lv2-btn--primary lv2-btn--lg">
+                            <?php ee('Go to dashboard') ?>
+                        </a>
+                    <?php endif ?>
+                    <?php if(config('contact')): ?>
+                        <a href="<?php echo route('contact') ?>" class="lv2-btn lv2-btn--ghost lv2-btn--lg">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                            <?php ee('Contact Sales') ?>
+                        </a>
+                    <?php endif ?>
+                </div>
+
+                <!-- Social proof -->
+                <div class="lv2-social-proof">
+                    <div class="lv2-avatar-stack" aria-hidden="true">
+                        <img src="https://i.pravatar.cc/72?img=11" alt="" loading="lazy">
+                        <img src="https://i.pravatar.cc/72?img=32" alt="" loading="lazy">
+                        <img src="https://i.pravatar.cc/72?img=45" alt="" loading="lazy">
+                        <img src="https://i.pravatar.cc/72?img=68" alt="" loading="lazy">
+                    </div>
+                    <div class="lv2-social-proof__meta">
+                        <div class="lv2-social-proof__stars" aria-label="<?php echo e('Rated 4.9 out of 5') ?>">
+                            <?php for($i=0;$i<5;$i++): ?>
+                                <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            <?php endfor ?>
+                        </div>
+                        <p class="lv2-social-proof__text" style="margin:0;">
+                            <strong>4.9/5</strong> <?php ee('from') ?> <strong>1,200+ <?php ee('happy users') ?></strong>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hero visual: bio-page mockup -->
+            <div class="lv2-hero__visual lv2-fade-up lv2-fade-up--d2" aria-hidden="true">
+                <?php if($_hero_img): ?>
                     <img src="<?php echo $_hero_img ?>"
                          alt="<?php echo config('title') ?>"
-                         class="lv2-hero__visual-img"
+                         style="max-width:420px; width:100%; border-radius: var(--lv2-radius-2xl); box-shadow: var(--lv2-shadow-lg); border: 1px solid var(--lv2-border);"
                          loading="eager"
                          decoding="async"
                          fetchpriority="high">
-
-                    <div class="lv2-float lv2-float--tl">
-                        <span class="lv2-float__dot"><i data-feather="zap" aria-hidden="true"></i></span>
-                        <div>
-                            <div class="lv2-float__label"><?php ee('Click recorded') ?></div>
-                            <div class="lv2-float__sub"><?php ee('Real-time analytics') ?></div>
-                        </div>
+                <?php else: ?>
+                <div class="lv2-mockup">
+                    <div class="lv2-mockup__bar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <span class="lv2-mockup__bar-url">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" style="display:inline; vertical-align:-1px;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            yourname.<?php echo parse_url(config('url'), PHP_URL_HOST) ?: 'url.example.com' ?>
+                        </span>
                     </div>
-                    <div class="lv2-float lv2-float--br">
-                        <span class="lv2-float__dot"><i data-feather="shield" aria-hidden="true"></i></span>
-                        <div>
-                            <div class="lv2-float__label"><?php ee('Secure &amp; private') ?></div>
-                            <div class="lv2-float__sub"><?php ee('Password-protected links') ?></div>
+                    <div class="lv2-mockup__panel">
+                        <div class="lv2-mockup__avatar">M</div>
+                        <div class="lv2-mockup__name">Madison</div>
+                        <div class="lv2-mockup__socials">
+                            <a href="#" aria-label="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.56 9.88V14.9H7.9V12h2.54V9.8c0-2.5 1.49-3.88 3.77-3.88 1.09 0 2.24.19 2.24.19v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.77l-.44 2.9h-2.33v6.98A10 10 0 0 0 22 12z"/></svg></a>
+                            <a href="#" aria-label="X"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+                        </div>
+                        <div class="lv2-mockup__links">
+                            <span class="lv2-mockup__link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                                New Merch
+                            </span>
+                            <span class="lv2-mockup__link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+                                Shop
+                            </span>
                         </div>
                     </div>
                 </div>
+                <?php endif ?>
+            </div>
 
+        </div>
+
+        <!-- Inline stat strip (only shown when stats config on; otherwise hidden) -->
+        <?php if (config("homepage_stats")): ?>
+        <div class="lv2-stat-strip lv2-fade-up lv2-fade-up--d3" style="max-width: 560px; margin-left: auto; margin-right: auto;">
+            <div class="lv2-stat-strip__item">
+                <div class="lv2-stat-strip__value"><span class="counter"><?php echo $count->users ?></span>+</div>
+                <div class="lv2-stat-strip__label"><?php ee('Active Users') ?></div>
+            </div>
+            <div class="lv2-stat-strip__item">
+                <div class="lv2-stat-strip__value"><span class="counter"><?php echo $count->links ?></span>+</div>
+                <div class="lv2-stat-strip__label"><?php ee('Links Created') ?></div>
+            </div>
+            <div class="lv2-stat-strip__item">
+                <div class="lv2-stat-strip__value">99.9%</div>
+                <div class="lv2-stat-strip__label"><?php ee('Uptime') ?></div>
+            </div>
+        </div>
+        <?php endif ?>
+
+    </div>
+</section>
+
+<!-- ============================================================
+     INTEGRATION STRIP
+     ============================================================ -->
+<section class="lv2-section--tight" style="padding-top: 0;">
+    <div class="lv2-container">
+        <div class="lv2-integ-strip" aria-label="<?php echo e('Integrations') ?>">
+            <div class="lv2-integ-strip__title"><?php ee('Connect your audience everywhere') ?></div>
+            <div class="lv2-integ-strip__items">
+                <?php
+                $_integ = [
+                    ['wp.svg', 'WordPress'],
+                    ['slack.svg', 'Slack'],
+                    ['facebook.svg', 'Facebook'],
+                    ['twitter.svg', 'X'],
+                    ['linkedin.svg', 'LinkedIn'],
+                    ['tiktok.svg', 'TikTok'],
+                    ['pinterest.svg', 'Pinterest'],
+                    ['zapier.svg', 'Zapier'],
+                ];
+                foreach($_integ as $_i): ?>
+                    <div class="lv2-integ-strip__item" title="<?php echo $_i[1] ?>">
+                        <span class="lv2-integ-strip__circle">
+                            <img src="<?php echo assets('images/'.$_i[0]) ?>" alt="<?php echo $_i[1] ?>" loading="lazy" decoding="async">
+                        </span>
+                        <span class="lv2-integ-strip__name"><?php echo $_i[1] ?></span>
+                    </div>
+                <?php endforeach ?>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
+     USER HISTORY (conditional — preserved)
+     ============================================================ -->
+<?php if(config('user_history') && !\Core\Auth::logged() && $urls = \Helpers\App::userHistory()): ?>
+    <section class="lv2-section" aria-labelledby="lv2-history-title">
+        <div class="lv2-container">
+            <h2 id="lv2-history-title" class="lv2-section-title"><?php ee('Your latest links') ?></h2>
+            <p class="lv2-section-lead"><?php ee('Pick up where you left off — we kept your recent links in this browser.') ?></p>
+            <div class="lv2-link-list" style="max-width: 720px;">
+                <?php foreach($urls as $url): ?>
+                    <div class="lv2-link-list__item">
+                        <a class="lv2-link-list__title" href="<?php echo $url['url'] ?>" target="_blank" rel="noopener"><?php echo $url['meta_title'] ?></a>
+                        <a class="lv2-link-list__url" href="<?php echo \Helpers\App::shortRoute($url['domain'], $url['alias'].$url['custom']) ?>"><?php echo \Helpers\App::shortRoute($url['domain'], $url['alias'].$url['custom']) ?></a>
+                    </div>
+                <?php endforeach ?>
+            </div>
+            <div style="margin-top: var(--lv2-space-6);">
+                <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--primary"><?php ee('Unlock advanced features') ?> &rarr;</a>
+            </div>
+        </div>
+    </section>
+<?php endif ?>
+
+<!-- ============================================================
+     PUBLIC LATEST LINKS (conditional — preserved)
+     ============================================================ -->
+<?php if(config('public_dir')): ?>
+    <section class="lv2-section" aria-labelledby="lv2-public-title">
+        <div class="lv2-container">
+            <h2 id="lv2-public-title" class="lv2-section-title"><?php ee('Latest links') ?></h2>
+            <p class="lv2-section-lead"><?php ee('A live look at what the community is sharing.') ?></p>
+            <div class="lv2-link-list" style="max-width: 720px;">
+                <?php foreach(\Core\DB::url()->where('public', '1')->orderByDesc('date')->limit(15)->findArray() as $url): ?>
+                    <div class="lv2-link-list__item">
+                        <a class="lv2-link-list__title" href="<?php echo $url['url'] ?>" target="_blank" rel="noopener"><?php echo $url['meta_title'] ?></a>
+                        <a class="lv2-link-list__url" href="<?php echo \Helpers\App::shortRoute($url['domain'], $url['alias'].$url['custom']) ?>"><?php echo \Helpers\App::shortRoute($url['domain'], $url['alias'].$url['custom']) ?></a>
+                    </div>
+                <?php endforeach ?>
+            </div>
+        </div>
+    </section>
+<?php else: ?>
+
+    <!-- ============================================================
+         POWERFUL FEATURES — feature grid + analytics dashboard
+         ============================================================ -->
+    <section class="lv2-section" aria-labelledby="lv2-features-title">
+        <div class="lv2-container">
+            <div class="lv2-features-layout">
+                <div class="lv2-fade-up">
+                    <span class="lv2-section-eyebrow"><?php ee('Powerful features') ?></span>
+                    <h2 id="lv2-features-title" class="lv2-section-title"><?php ee('Everything you need to grow') ?></h2>
+                    <p class="lv2-section-lead"><?php ee('Powerful tools to help you create, customize, and analyze your links like never before.') ?></p>
+
+                    <div class="lv2-feature-grid">
+                        <article class="lv2-feature-card">
+                            <span class="lv2-feature-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                            </span>
+                            <div>
+                                <h3 class="lv2-feature-card__title"><?php ee('45+ Dynamic Widgets') ?></h3>
+                                <p class="lv2-feature-card__desc"><?php ee('Add videos, forms, links &amp; more.') ?></p>
+                            </div>
+                        </article>
+                        <article class="lv2-feature-card">
+                            <span class="lv2-feature-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            </span>
+                            <div>
+                                <h3 class="lv2-feature-card__title"><?php ee('Customizable Designs') ?></h3>
+                                <p class="lv2-feature-card__desc"><?php ee('Match your brand perfectly.') ?></p>
+                            </div>
+                        </article>
+                        <article class="lv2-feature-card">
+                            <span class="lv2-feature-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                            </span>
+                            <div>
+                                <h3 class="lv2-feature-card__title"><?php ee('Advanced Analytics') ?></h3>
+                                <p class="lv2-feature-card__desc"><?php ee('Track clicks and engagement.') ?></p>
+                            </div>
+                        </article>
+                        <article class="lv2-feature-card">
+                            <span class="lv2-feature-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            </span>
+                            <div>
+                                <h3 class="lv2-feature-card__title"><?php ee('SEO Optimized') ?></h3>
+                                <p class="lv2-feature-card__desc"><?php ee('Rank higher. Get discovered.') ?></p>
+                            </div>
+                        </article>
+                        <article class="lv2-feature-card">
+                            <span class="lv2-feature-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            </span>
+                            <div>
+                                <h3 class="lv2-feature-card__title"><?php ee('QR Codes') ?></h3>
+                                <p class="lv2-feature-card__desc"><?php ee('Create &amp; customize QR codes.') ?></p>
+                            </div>
+                        </article>
+                        <article class="lv2-feature-card">
+                            <span class="lv2-feature-card__icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            </span>
+                            <div>
+                                <h3 class="lv2-feature-card__title"><?php ee('Custom Domains') ?></h3>
+                                <p class="lv2-feature-card__desc"><?php ee('Use your own domain.') ?></p>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+
+                <!-- Decorative analytics dashboard mockup -->
+                <div class="lv2-analytics lv2-fade-up lv2-fade-up--d2" aria-hidden="true">
+                    <div class="lv2-analytics__row">
+                        <div class="lv2-analytics__tile">
+                            <div class="lv2-analytics__tile-label"><?php ee('Total Clicks') ?></div>
+                            <div class="lv2-analytics__tile-value">24,543 <span class="lv2-analytics__delta">+12.5%</span></div>
+                        </div>
+                        <div class="lv2-analytics__tile">
+                            <div class="lv2-analytics__tile-label"><?php ee('Top Source') ?></div>
+                            <div class="lv2-analytics__tile-source">
+                                <img src="<?php echo assets('images/zapier.svg') ?>" alt="" onerror="this.style.display='none'">
+                                Instagram
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lv2-analytics__chart">
+                        <div class="lv2-analytics__chart-tooltip"><strong>May 12</strong><br>4,753 <?php ee('Clicks') ?></div>
+                        <svg viewBox="0 0 400 110" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="lv2chartg" x1="0" x2="1" y1="0" y2="0">
+                                    <stop offset="0%" stop-color="#4F46E5"/>
+                                    <stop offset="100%" stop-color="#06B6D4"/>
+                                </linearGradient>
+                                <linearGradient id="lv2chartf" x1="0" x2="0" y1="0" y2="1">
+                                    <stop offset="0%" stop-color="#4F46E5" stop-opacity=".22"/>
+                                    <stop offset="100%" stop-color="#4F46E5" stop-opacity="0"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M0,82 L50,76 L100,68 L150,46 L200,40 L250,28 L300,22 L350,32 L400,16 L400,110 L0,110 Z" fill="url(#lv2chartf)"/>
+                            <path d="M0,82 L50,76 L100,68 L150,46 L200,40 L250,28 L300,22 L350,32 L400,16" fill="none" stroke="url(#lv2chartg)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="200" cy="40" r="6" fill="#fff" stroke="#4F46E5" stroke-width="2.5"/>
+                        </svg>
+                        <div class="lv2-analytics__chart-x">
+                            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span>
+                        </div>
+                    </div>
+                    <div class="lv2-analytics__row">
+                        <div class="lv2-analytics__tile">
+                            <div class="lv2-analytics__tile-label"><?php ee('Unique Visitors') ?></div>
+                            <div class="lv2-analytics__tile-value">8,921 <span class="lv2-analytics__delta">+8.3%</span></div>
+                        </div>
+                        <div class="lv2-analytics__tile">
+                            <div class="lv2-analytics__tile-label"><?php ee('Avg. Click Rate') ?></div>
+                            <div class="lv2-analytics__tile-value">3.6% <span class="lv2-analytics__delta">+4.1%</span></div>
+                        </div>
+                    </div>
+                    <div class="lv2-analytics__see-more"><?php ee('See detailed analytics') ?> &rarr;</div>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- ============================================================
-         USER HISTORY (preserved — only renders when config + no auth)
+         CAPABILITIES — 3-up
          ============================================================ -->
-    <?php if(config('user_history') && !\Core\Auth::logged() && $urls = \Helpers\App::userHistory()): ?>
-        <section class="lv2-section lv2-section--alt" aria-labelledby="lv2-history-title">
-            <div class="lv2-container">
-                <div class="lv2-grid lv2-grid--2">
-                    <div>
-                        <h2 id="lv2-history-title" class="lv2-section__title"><?php ee('Your latest links') ?></h2>
-                        <p class="lv2-section__lead" style="margin-left:0"><?php ee('Pick up where you left off — we kept your recent links in this browser.') ?></p>
-                        <div class="lv2-link-list">
-                            <?php foreach($urls as $url): ?>
-                                <div class="lv2-link-list__item">
-                                    <a class="lv2-link-list__title" href="<?php echo $url['url'] ?>" target="_blank" rel="noopener"><?php echo $url['meta_title'] ?></a>
-                                    <a class="lv2-link-list__url" href="<?php echo \Helpers\App::shortRoute($url['domain'], $url['alias'].$url['custom']) ?>"><?php echo \Helpers\App::shortRoute($url['domain'], $url['alias'].$url['custom']) ?></a>
-                                </div>
-                            <?php endforeach ?>
-                        </div>
-                        <div style="margin-top: 1.5rem;">
-                            <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--primary"><?php ee('Unlock advanced features') ?> &rarr;</a>
-                        </div>
-                    </div>
-                    <div>
-                        <?php \Helpers\App::ads('resp') ?>
-                    </div>
-                </div>
+    <section class="lv2-section" aria-labelledby="lv2-cap-title">
+        <div class="lv2-container">
+            <div style="text-align:center; max-width: 640px; margin: 0 auto var(--lv2-space-9);">
+                <span class="lv2-section-eyebrow"><?php ee('Why teams choose us') ?></span>
+                <h2 id="lv2-cap-title" class="lv2-section-title"><?php ee('Built for serious marketers') ?></h2>
+                <p class="lv2-section-lead" style="margin-left:auto; margin-right:auto;"><?php ee('From smart targeting to deep analytics — every tool you need, ready out of the box.') ?></p>
             </div>
-        </section>
+
+            <div class="lv2-cap-grid">
+                <article class="lv2-cap lv2-fade-up">
+                    <span class="lv2-cap__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                    </span>
+                    <h3 class="lv2-cap__title"><?php ee('Smart Targeting') ?></h3>
+                    <p class="lv2-cap__desc"><?php ee('Route every visitor to the right page by country, device, or language. Add retargeting pixels and bring them back when it matters.') ?></p>
+                </article>
+
+                <article class="lv2-cap lv2-cap--c1 lv2-fade-up lv2-fade-up--d1">
+                    <span class="lv2-cap__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                    </span>
+                    <h3 class="lv2-cap__title"><?php ee('In-Depth Analytics') ?></h3>
+                    <p class="lv2-cap__desc"><?php ee("Real-time clicks broken down by country, city, OS, browser, referrer and time — so you optimize what's working.") ?></p>
+                </article>
+
+                <article class="lv2-cap lv2-cap--c2 lv2-fade-up lv2-fade-up--d2">
+                    <span class="lv2-cap__icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </span>
+                    <h3 class="lv2-cap__title"><?php ee('Digital Experience') ?></h3>
+                    <p class="lv2-cap__desc"><?php ee('Splash pages, branded overlays, password gates and click caps — premium polish without engineering effort.') ?></p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================================
+         TESTIMONIALS (conditional — preserved)
+         ============================================================ -->
+    <?php if($testimonials = config('testimonials')): ?>
+    <section class="lv2-section" aria-labelledby="lv2-test-title">
+        <div class="lv2-container">
+            <div style="text-align:center; max-width: 640px; margin: 0 auto var(--lv2-space-9);">
+                <span class="lv2-section-eyebrow"><?php ee('Loved by teams') ?></span>
+                <h2 id="lv2-test-title" class="lv2-section-title"><?php ee('What our customers say') ?></h2>
+            </div>
+
+            <div class="lv2-cap-grid">
+                <?php foreach($testimonials as $testimonial): ?>
+                    <article class="lv2-cap">
+                        <div style="display:flex; gap:2px; color: var(--lv2-warning); margin-bottom: 12px;">
+                            <?php for($i=0;$i<5;$i++): ?>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            <?php endfor ?>
+                        </div>
+                        <p style="font-size: var(--lv2-text-md); color: var(--lv2-text-2); line-height: 1.6; margin-bottom: var(--lv2-space-5);"><?php echo $testimonial->testimonial ?></p>
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <?php
+                            if(isset($testimonial->avatar) && file_exists(appConfig('app')['storage']['avatar']['path'].'/'.$testimonial->avatar)) {
+                                $testimonial->avatar = uploads($testimonial->avatar, 'avatar');
+                            } else if($testimonial->email) {
+                                $testimonial->avatar = 'https://www.gravatar.com/avatar/'.md5(trim($testimonial->email)).'?s=64&d=identicon';
+                            }
+                            ?>
+                            <?php if(!empty($testimonial->avatar)): ?>
+                                <img src="<?php echo $testimonial->avatar ?>" alt="<?php echo $testimonial->name ?>"
+                                     style="width:44px; height:44px; border-radius:50%; object-fit:cover;"
+                                     loading="lazy">
+                            <?php endif ?>
+                            <div>
+                                <p style="font-size: var(--lv2-text-sm); font-weight: 600; margin: 0;"><?php echo $testimonial->name ?></p>
+                                <?php if($testimonial->job): ?>
+                                    <p style="font-size: var(--lv2-text-xs); color: var(--lv2-text-3); margin: 0;"><?php echo $testimonial->job ?></p>
+                                <?php endif ?>
+                            </div>
+                        </div>
+                    </article>
+                <?php endforeach ?>
+            </div>
+        </div>
+    </section>
     <?php endif ?>
 
     <!-- ============================================================
-         PUBLIC LATEST LINKS (preserved — conditional)
+         CTA BANNER
          ============================================================ -->
-    <?php if(config('public_dir')): ?>
-        <section class="lv2-section lv2-section--alt" aria-labelledby="lv2-public-title">
-            <div class="lv2-container">
-                <div class="lv2-grid lv2-grid--2">
-                    <div>
-                        <h2 id="lv2-public-title" class="lv2-section__title"><?php ee('Latest links') ?></h2>
-                        <p class="lv2-section__lead" style="margin-left:0"><?php ee('A live look at what the community is sharing.') ?></p>
-                        <div class="lv2-link-list">
-                            <?php foreach(\Core\DB::url()->where('public', '1')->orderByDesc('date')->limit(15)->findArray() as $url): ?>
-                                <div class="lv2-link-list__item">
-                                    <a class="lv2-link-list__title" href="<?php echo $url['url'] ?>" target="_blank" rel="noopener"><?php echo $url['meta_title'] ?></a>
-                                    <a class="lv2-link-list__url" href="<?php echo \Helpers\App::shortRoute($url['domain'], $url['alias'].$url['custom']) ?>"><?php echo \Helpers\App::shortRoute($url['domain'], $url['alias'].$url['custom']) ?></a>
-                                </div>
-                            <?php endforeach ?>
-                        </div>
-                    </div>
-                    <div>
-                        <?php \Helpers\App::ads('resp') ?>
-                    </div>
+    <?php if(!\Core\Auth::logged() && config("user") && !config("private") && !config("maintenance")): ?>
+    <section class="lv2-section">
+        <div class="lv2-container">
+            <div class="lv2-cta-banner lv2-fade-up">
+                <div>
+                    <h2 class="lv2-cta-banner__title"><?php ee('Take control of your links') ?></h2>
+                    <p class="lv2-cta-banner__lead"><?php ee("You're one click away from taking control of all your links and instantly getting better results.") ?></p>
+                </div>
+                <div class="lv2-cta-banner__action">
+                    <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--white lv2-btn--lg">
+                        <?php ee('Get Started for Free') ?>
+                    </a>
                 </div>
             </div>
-        </section>
-    <?php else: ?>
-
-        <!-- ============================================================
-             FEATURE BENTO
-             ============================================================ -->
-        <section class="lv2-section" aria-labelledby="lv2-features-title">
-            <div class="lv2-container">
-                <div class="lv2-section__head lv2-fade-up">
-                    <span class="lv2-eyebrow">
-                        <span class="lv2-eyebrow__dot" aria-hidden="true"></span>
-                        <?php ee('Why teams choose us') ?>
-                    </span>
-                    <h2 id="lv2-features-title" class="lv2-section__title">
-                        <?php ee('Everything you need to') ?> <span class="lv2-gradient-text"><?php ee('grow') ?></span>
-                    </h2>
-                    <p class="lv2-section__lead">
-                        <?php ee("From smart targeting to deep analytics — the toolkit modern marketers, creators and developers reach for first.") ?>
-                    </p>
-                </div>
-
-                <div class="lv2-feature-bento">
-                    <article class="lv2-feature lv2-fade-up lv2-fade-up--d1">
-                        <div class="lv2-feature__icon" aria-hidden="true"><i data-feather="target"></i></div>
-                        <h3 class="lv2-feature__title"><?php ee('Smart Targeting') ?></h3>
-                        <p class="lv2-feature__desc">
-                            <?php ee('Route every visitor to the right page by country, device, or language. Add retargeting pixels and bring them back when it matters.') ?>
-                        </p>
-                    </article>
-
-                    <article class="lv2-feature lv2-feature--alt-1 lv2-fade-up lv2-fade-up--d2">
-                        <div class="lv2-feature__icon" aria-hidden="true"><i data-feather="bar-chart-2"></i></div>
-                        <h3 class="lv2-feature__title"><?php ee('In-Depth Analytics') ?></h3>
-                        <p class="lv2-feature__desc">
-                            <?php ee("Real-time clicks broken down by country, city, OS, browser, referrer, and time — so you can optimize what's working.") ?>
-                        </p>
-                    </article>
-
-                    <article class="lv2-feature lv2-feature--alt-2 lv2-fade-up lv2-fade-up--d3">
-                        <div class="lv2-feature__icon" aria-hidden="true"><i data-feather="star"></i></div>
-                        <h3 class="lv2-feature__title"><?php ee('Digital Experience') ?></h3>
-                        <p class="lv2-feature__desc">
-                            <?php ee('Splash pages, branded overlays, password gates and click caps — premium polish without engineering effort.') ?>
-                        </p>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             SHOWCASE — analytics
-             ============================================================ -->
-        <section class="lv2-section lv2-section--alt">
-            <div class="lv2-container">
-                <div class="lv2-showcase lv2-showcase--reverse">
-                    <div class="lv2-showcase__copy lv2-fade-up">
-                        <span class="lv2-showcase__eyebrow"><i data-feather="trending-up" aria-hidden="true"></i> <?php ee('Analytics') ?></span>
-                        <h2 class="lv2-showcase__title"><?php ee('Advanced link analytics &amp; tracking') ?></h2>
-                        <p class="lv2-showcase__lead">
-                            <?php ee('Track every click with geo, device, browser, referrer and timestamp. Understand who clicks, when and why — then double down on what converts.') ?>
-                        </p>
-                        <ul class="lv2-checklist">
-                            <li><span class="lv2-checklist__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><?php ee('Redirection Tools') ?></li>
-                            <li><span class="lv2-checklist__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><?php ee('Powerful Statistics') ?></li>
-                            <li><span class="lv2-checklist__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><?php ee('Beautiful Profiles') ?></li>
-                        </ul>
-                    </div>
-                    <div class="lv2-showcase__visual lv2-fade-up lv2-fade-up--d1">
-                        <img src="<?php echo assets('images/profiles.png') ?>"
-                             alt="<?php echo e('Powerful link analytics dashboard') ?>"
-                             loading="lazy" decoding="async">
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             SHOWCASE — link management
-             ============================================================ -->
-        <section class="lv2-section">
-            <div class="lv2-container">
-                <div class="lv2-showcase">
-                    <div class="lv2-showcase__copy lv2-fade-up">
-                        <span class="lv2-showcase__eyebrow"><i data-feather="lock" aria-hidden="true"></i> <?php ee('Management') ?></span>
-                        <h2 class="lv2-showcase__title"><?php ee('Professional link management') ?></h2>
-                        <p class="lv2-showcase__lead">
-                            <?php ee('Password gates, expiration dates, custom aliases, branded domains and bulk operations — enterprise control without the enterprise complexity.') ?>
-                        </p>
-                        <ul class="lv2-checklist">
-                            <li><span class="lv2-checklist__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><?php ee('Link Management') ?></li>
-                            <li><span class="lv2-checklist__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><?php ee('Privacy Control') ?></li>
-                            <li><span class="lv2-checklist__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span><?php ee('Powerful Dashboard') ?></li>
-                        </ul>
-                    </div>
-                    <div class="lv2-showcase__visual lv2-fade-up lv2-fade-up--d1">
-                        <img src="<?php echo assets('images/filters.png') ?>"
-                             alt="<?php echo e('Filter, password-protect and expire your links') ?>"
-                             loading="lazy" decoding="async">
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             SHOWCASE — QR
-             ============================================================ -->
-        <section class="lv2-section lv2-section--alt">
-            <div class="lv2-container">
-                <div class="lv2-showcase lv2-showcase--reverse">
-                    <div class="lv2-showcase__copy lv2-fade-up">
-                        <span class="lv2-showcase__eyebrow"><i data-feather="grid" aria-hidden="true"></i> <?php ee('QR Codes') ?></span>
-                        <h2 class="lv2-showcase__title"><?php ee('Free QR code generator') ?></h2>
-                        <p class="lv2-showcase__lead">
-                            <?php ee('Branded, customisable QR codes for any URL. Custom colors, logos, frames and shapes — perfect for print, packaging and campaigns.') ?>
-                        </p>
-                        <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--primary">
-                            <?php ee('Get started') ?>
-                            <svg class="lv2-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                        </a>
-                    </div>
-                    <div class="lv2-showcase__visual lv2-fade-up lv2-fade-up--d1">
-                        <img src="<?php echo assets('images/qrcodes.png') ?>"
-                             alt="<?php echo e('Custom-designed QR codes') ?>"
-                             loading="lazy" decoding="async">
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             ACTIVITY WIDGET — live clicks visual
-             ============================================================ -->
-        <section class="lv2-section">
-            <div class="lv2-container">
-                <div class="lv2-activity">
-                    <div class="lv2-activity-cards" aria-label="<?php echo e('Live link activity') ?>">
-                        <div class="lv2-activity-card">
-                            <img class="lv2-activity-card__flag" src="<?php echo assets('images/flags/us.svg') ?>" alt="<?php echo e('New York, United States') ?>" loading="lazy">
-                            <div class="lv2-activity-card__body">
-                                <p class="lv2-activity-card__title"><?php ee('Someone visited your link') ?></p>
-                                <p class="lv2-activity-card__meta"><?php ee('New York, United States') ?></p>
-                            </div>
-                            <span class="lv2-activity-card__pill"><?php ee('{d} minutes ago', null, ['d' => 2]) ?></span>
-                        </div>
-                        <div class="lv2-activity-card">
-                            <img class="lv2-activity-card__flag" src="<?php echo assets('images/flags/fr.svg') ?>" alt="<?php echo e('Paris, France') ?>" loading="lazy">
-                            <div class="lv2-activity-card__body">
-                                <p class="lv2-activity-card__title"><?php ee('Someone visited your link') ?></p>
-                                <p class="lv2-activity-card__meta"><?php ee('Paris, France') ?></p>
-                            </div>
-                            <span class="lv2-activity-card__pill"><?php ee('{d} minutes ago', null, ['d' => 5]) ?></span>
-                        </div>
-                        <div class="lv2-activity-card">
-                            <img class="lv2-activity-card__flag" src="<?php echo assets('images/flags/gb.svg') ?>" alt="<?php echo e('London, United Kingdom') ?>" loading="lazy">
-                            <div class="lv2-activity-card__body">
-                                <p class="lv2-activity-card__title"><?php ee('Someone visited your link') ?></p>
-                                <p class="lv2-activity-card__meta"><?php ee('London, United Kingdom') ?></p>
-                            </div>
-                            <span class="lv2-activity-card__pill"><?php ee('{d} minutes ago', null, ['d' => 8]) ?></span>
-                        </div>
-                    </div>
-                    <div class="lv2-fade-up lv2-fade-up--d2">
-                        <span class="lv2-showcase__eyebrow"><i data-feather="activity" aria-hidden="true"></i> <?php ee('Marketing Strategy') ?></span>
-                        <h2 class="lv2-showcase__title"><?php ee('Optimize your marketing strategy') ?></h2>
-                        <p class="lv2-showcase__lead">
-                            <?php ee('Understand your customers to lift conversion. Track clicks, countries, referrers and devices — the data lives in one clean dashboard.') ?>
-                        </p>
-                        <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--primary">
-                            <?php ee('Get started') ?>
-                            <svg class="lv2-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             CAPABILITIES — 6-up grid (formerly "More features than asked for")
-             ============================================================ -->
-        <section class="lv2-section lv2-section--alt" aria-labelledby="lv2-cap-title">
-            <div class="lv2-container">
-                <div class="lv2-section__head lv2-fade-up">
-                    <span class="lv2-eyebrow">
-                        <span class="lv2-eyebrow__dot" aria-hidden="true"></span>
-                        <?php ee('Capabilities') ?>
-                    </span>
-                    <h2 id="lv2-cap-title" class="lv2-section__title"><?php ee('More than you asked for') ?></h2>
-                    <p class="lv2-section__lead"><?php ee('Every premium link feature, ready out of the box.') ?></p>
-                </div>
-
-                <div class="lv2-grid lv2-grid--3">
-                    <article class="lv2-card lv2-card--hover lv2-card--tint-6">
-                        <div class="lv2-card__icon" aria-hidden="true"><i data-feather="loader"></i></div>
-                        <h3 class="lv2-card__title"><?php ee('Custom Landing Page') ?></h3>
-                        <p class="lv2-card__body"><?php ee('Create a custom landing page to promote your product or service on forefront and engage the user in your marketing campaign.') ?></p>
-                    </article>
-                    <article class="lv2-card lv2-card--hover lv2-card--tint-1">
-                        <div class="lv2-card__icon" aria-hidden="true"><i data-feather="layers"></i></div>
-                        <h3 class="lv2-card__title"><?php ee('CTA Overlays') ?></h3>
-                        <p class="lv2-card__body"><?php ee('Use our overlay tool to display unobtrusive notifications, polls or even a contact on the target website. Great for campaigns.') ?></p>
-                    </article>
-                    <article class="lv2-card lv2-card--hover lv2-card--tint-3">
-                        <div class="lv2-card__icon" aria-hidden="true"><i data-feather="compass"></i></div>
-                        <h3 class="lv2-card__title"><?php ee('Event Tracking') ?></h3>
-                        <p class="lv2-card__body"><?php ee('Add your custom pixel from providers such as Facebook and track events right when they are happening.') ?></p>
-                    </article>
-                    <article class="lv2-card lv2-card--hover lv2-card--tint-5">
-                        <div class="lv2-card__icon" aria-hidden="true"><i data-feather="users"></i></div>
-                        <h3 class="lv2-card__title"><?php ee('Team Management') ?></h3>
-                        <p class="lv2-card__body"><?php ee('Invite your team members and assign them specific privileges to manage links, bundles, pages and other features.') ?></p>
-                    </article>
-                    <article class="lv2-card lv2-card--hover lv2-card--tint-4">
-                        <div class="lv2-card__icon" aria-hidden="true"><i data-feather="globe"></i></div>
-                        <h3 class="lv2-card__title"><?php ee('Branded Domain Names') ?></h3>
-                        <p class="lv2-card__body"><?php ee("Easily add your own domain name for short your links and take control of your brand name and your users' trust.") ?></p>
-                    </article>
-                    <article class="lv2-card lv2-card--hover lv2-card--tint-2">
-                        <div class="lv2-card__icon" aria-hidden="true"><i data-feather="terminal"></i></div>
-                        <h3 class="lv2-card__title"><?php ee('Robust API') ?></h3>
-                        <p class="lv2-card__body"><?php ee('Use our powerful API to build custom applications or extend your own application with our powerful tools.') ?></p>
-                    </article>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             INTEGRATIONS GRID
-             ============================================================ -->
-        <section class="lv2-section" aria-labelledby="lv2-int-title">
-            <div class="lv2-container">
-                <div class="lv2-section__head lv2-fade-up">
-                    <span class="lv2-eyebrow">
-                        <span class="lv2-eyebrow__dot" aria-hidden="true"></span>
-                        <?php ee('Integrations') ?>
-                    </span>
-                    <h2 id="lv2-int-title" class="lv2-section__title"><?php ee('Plays nicely with your stack') ?></h2>
-                    <p class="lv2-section__lead"><?php ee('Connect with popular tools and boost your productivity.') ?></p>
-                </div>
-
-                <?php
-                $_integrations = [
-                    ['wp.svg', 'WordPress'],
-                    ['slack.svg', 'Slack'],
-                    ['shortcuts.svg', 'Shortcuts'],
-                    ['gtm.svg', 'Google Tag Manager'],
-                    ['facebook.svg', 'Facebook'],
-                    ['zapier.svg', 'Zapier'],
-                    ['bing.svg', 'Bing'],
-                    ['twitter.svg', 'Twitter'],
-                    ['snapchat.svg', 'Snapchat'],
-                    ['reddit.svg', 'Reddit'],
-                    ['ga.svg', 'Google Analytics'],
-                    ['linkedin.svg', 'LinkedIn'],
-                    ['pinterest.svg', 'Pinterest'],
-                    ['quora.svg', 'Quora'],
-                    ['tiktok.svg', 'TikTok'],
-                    ['aroll.svg', 'Adroll'],
-                ];
-                ?>
-                <div class="lv2-integrations">
-                    <?php foreach($_integrations as $_int): ?>
-                        <div class="lv2-integration">
-                            <img src="<?php echo assets('images/'.$_int[0]) ?>" alt="<?php echo $_int[1] ?>" loading="lazy" decoding="async">
-                            <p class="lv2-integration__name"><?php echo $_int[1] ?></p>
-                        </div>
-                    <?php endforeach ?>
-                </div>
-
-                <div style="text-align:center; margin-top: 2.5rem;">
-                    <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--ghost"><?php ee('See all integrations') ?> &rarr;</a>
-                </div>
-            </div>
-        </section>
-
-        <!-- ============================================================
-             TESTIMONIALS (conditional — preserved)
-             ============================================================ -->
-        <?php if($testimonials = config('testimonials')): ?>
-        <section class="lv2-section lv2-section--alt" aria-labelledby="lv2-testimonials-title">
-            <div class="lv2-container">
-                <div class="lv2-section__head lv2-fade-up">
-                    <span class="lv2-eyebrow">
-                        <span class="lv2-eyebrow__dot" aria-hidden="true"></span>
-                        <?php ee('Loved by teams') ?>
-                    </span>
-                    <h2 id="lv2-testimonials-title" class="lv2-section__title"><?php ee('What our customers say about us') ?></h2>
-                </div>
-                <div class="lv2-testimonials">
-                    <?php foreach($testimonials as $testimonial): ?>
-                        <article class="lv2-testimonial">
-                            <div class="lv2-testimonial__stars" aria-label="<?php echo e('5 out of 5 stars') ?>">
-                                <?php for($i=0; $i<5; $i++): ?>
-                                    <svg viewBox="0 0 24 24" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                <?php endfor ?>
-                            </div>
-                            <p class="lv2-testimonial__quote"><?php echo $testimonial->testimonial ?></p>
-                            <div class="lv2-testimonial__author">
-                                <?php
-                                if(isset($testimonial->avatar) && file_exists(appConfig('app')['storage']['avatar']['path'].'/'.$testimonial->avatar)) {
-                                    $testimonial->avatar = uploads($testimonial->avatar, 'avatar');
-                                } else if($testimonial->email) {
-                                    $testimonial->avatar = 'https://www.gravatar.com/avatar/'.md5(trim($testimonial->email)).'?s=64&d=identicon';
-                                }
-                                ?>
-                                <?php if(!empty($testimonial->avatar)): ?>
-                                    <img class="lv2-testimonial__avatar" src="<?php echo $testimonial->avatar ?>" alt="<?php echo $testimonial->name ?>" loading="lazy">
-                                <?php endif ?>
-                                <div>
-                                    <p class="lv2-testimonial__name"><?php echo $testimonial->name ?></p>
-                                    <?php if($testimonial->job): ?>
-                                        <p class="lv2-testimonial__role"><?php echo $testimonial->job ?></p>
-                                    <?php endif ?>
-                                </div>
-                            </div>
-                        </article>
-                    <?php endforeach ?>
-                </div>
-            </div>
-        </section>
-        <?php endif ?>
-
-        <!-- ============================================================
-             STATS (conditional — preserved)
-             ============================================================ -->
-        <?php if (config("homepage_stats")): ?>
-        <section class="lv2-section" aria-labelledby="lv2-stats-title">
-            <div class="lv2-container">
-                <div class="lv2-section__head lv2-fade-up">
-                    <span class="lv2-eyebrow">
-                        <span class="lv2-eyebrow__dot" aria-hidden="true"></span>
-                        <?php ee('Trusted at scale') ?>
-                    </span>
-                    <h2 id="lv2-stats-title" class="lv2-section__title"><?php ee('Numbers that speak for themselves') ?></h2>
-                </div>
-                <div class="lv2-stats">
-                    <div class="lv2-stat lv2-fade-up">
-                        <div class="lv2-stat__label"><?php ee('Powering') ?></div>
-                        <div class="lv2-stat__value"><span class="counter"><?php echo $count->links ?></span>+</div>
-                        <p class="lv2-stat__caption"><?php ee('Links') ?></p>
-                    </div>
-                    <div class="lv2-stat lv2-fade-up lv2-fade-up--d1">
-                        <div class="lv2-stat__label"><?php ee('Serving') ?></div>
-                        <div class="lv2-stat__value"><span class="counter"><?php echo $count->clicks ?></span>+</div>
-                        <p class="lv2-stat__caption"><?php ee('Clicks') ?></p>
-                    </div>
-                    <div class="lv2-stat lv2-fade-up lv2-fade-up--d2">
-                        <div class="lv2-stat__label"><?php ee('Trusted by') ?></div>
-                        <div class="lv2-stat__value"><span class="counter"><?php echo $count->users ?></span>+</div>
-                        <p class="lv2-stat__caption"><?php ee('Happy Customers') ?></p>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <?php endif ?>
-
-        <!-- ============================================================
-             FINAL CTA
-             ============================================================ -->
-        <?php if(!\Core\Auth::logged() && config("user") && !config("private") && !config("maintenance")): ?>
-        <section class="lv2-section">
-            <div class="lv2-container">
-                <div class="lv2-cta-banner lv2-fade-up">
-                    <h2 class="lv2-cta-banner__title"><?php ee('Ready to start shortening?') ?></h2>
-                    <p class="lv2-cta-banner__lead">
-                        <?php ee('Join thousands of marketers, creators and developers using our platform every day. Free forever — no credit card required.') ?>
-                    </p>
-                    <div class="lv2-cta-banner__actions">
-                        <a href="<?php echo route('register') ?>" class="lv2-btn lv2-btn--primary lv2-btn--lg">
-                            <?php ee('Create free account') ?>
-                            <svg class="lv2-btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                        </a>
-                        <?php if(config('pro')): ?>
-                            <a href="<?php echo route('pricing') ?>" class="lv2-btn lv2-btn--ghost lv2-btn--lg"><?php ee('Compare plans') ?></a>
-                        <?php endif ?>
-                    </div>
-                </div>
-            </div>
-        </section>
-        <?php endif ?>
-
+        </div>
+    </section>
     <?php endif ?>
 
-</div>
+<?php endif ?>
