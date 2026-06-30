@@ -1,0 +1,4 @@
+[2026-01-04T06:47:11.671644+00:00] system.ERROR: Undefined property: stdClass::$force occurred in /home/sites/39a/b/b05b06748e/public_html/url/storage/themes/default/admin/settings/app.php:104 -> http://url.webtecheng.com/admin/settings/app  
+
+[2026-01-04T06:47:20.277929+00:00] system.ERROR: Undefined property: stdClass::$force occurred in /home/sites/39a/b/b05b06748e/public_html/url/storage/themes/default/admin/settings/app.php:104 -> http://url.webtecheng.com/admin/settings/app  
+

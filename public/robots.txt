@@ -1,0 +1,46 @@
+User-agent: *
+Allow: /
+Disallow: /user/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /checkout/
+Disallow: /oauth/
+Disallow: /update/
+Disallow: /crons/
+Disallow: /server/
+Disallow: /webhook/
+Disallow: /callback/
+Disallow: /verify/
+Disallow: /import/
+Disallow: /export/
+Disallow: /u/*/stats
+Disallow: /*/stats
+Disallow: /*/edit
+Disallow: /*/delete
+Disallow: /*/reset
+Disallow: /*/qr/download
+Disallow: /bookmark
+Disallow: /script.js
+Disallow: /fullpage
+Disallow: /q
+
+# Allow important pages
+Allow: /pricing
+Allow: /contact
+Allow: /report
+Allow: /faq
+Allow: /help
+Allow: /blog
+Allow: /page/
+Allow: /qr-codes
+Allow: /bio-profiles
+Allow: /developers
+Allow: /affiliate
+Allow: /sitemap.xml
+
+# Sitemap
+Sitemap: https://url.webtecheng.com/sitemap.xml
+
+# Crawl-delay (optional, adjust as needed)
+Crawl-delay: 1
+

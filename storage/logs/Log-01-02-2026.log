@@ -1,0 +1,16 @@
+[2026-01-02T10:35:28.626738+00:00] system.ERROR: str_replace(): Passing null to parameter #2 ($replace) of type array|string is deprecated occurred in /home/sites/39a/b/b05b06748e/public_html/url/app/controllers/BlogController.php:238 -> http://url.webtecheng.com/blog/what-is-url-shortener  
+
+[2026-01-02T12:29:25.220373+00:00] system.ERROR: Undefined variable $value occurred in /home/sites/39a/b/b05b06748e/public_html/url/core/Request.class.php:667 -> http://url.webtecheng.com/user  
+
+[2026-01-02T12:29:25.221579+00:00] system.ERROR: setcookie(): Passing null to parameter #2 ($value) of type string is deprecated occurred in /home/sites/39a/b/b05b06748e/public_html/url/core/Request.class.php:667 -> http://url.webtecheng.com/user  
+
+[2026-01-02T12:36:53.276204+00:00] system.ERROR: str_replace(): Passing null to parameter #2 ($replace) of type array|string is deprecated occurred in /home/sites/39a/b/b05b06748e/public_html/url/app/controllers/BlogController.php:238 -> http://url.webtecheng.com/blog/what-is-url-shortener?lang=en  
+
+[2026-01-02T12:38:23.252901+00:00] system.ERROR: Undefined property: stdClass::$force occurred in /home/sites/39a/b/b05b06748e/public_html/url/storage/themes/default/admin/settings/app.php:104 -> http://url.webtecheng.com/admin/settings/app  
+
+[2026-01-02T12:40:05.199823+00:00] system.ERROR: Undefined property: stdClass::$force occurred in /home/sites/39a/b/b05b06748e/public_html/url/storage/themes/default/admin/settings/app.php:104 -> http://url.webtecheng.com/admin/settings/app  
+
+[2026-01-02T12:40:26.969129+00:00] system.ERROR: str_replace(): Passing null to parameter #2 ($replace) of type array|string is deprecated occurred in /home/sites/39a/b/b05b06748e/public_html/url/app/controllers/BlogController.php:238 -> http://url.webtecheng.com/blog/what-is-url-shortener  
+
+[2026-01-02T18:36:43.535534+00:00] system.ERROR: str_replace(): Passing null to parameter #2 ($replace) of type array|string is deprecated occurred in /home/sites/39a/b/b05b06748e/public_html/url/app/controllers/BlogController.php:238 -> http://url.webtecheng.com/blog/what-is-url-shortener  
+

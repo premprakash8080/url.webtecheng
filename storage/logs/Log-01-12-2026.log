@@ -1,0 +1,2 @@
+[2026-01-12T09:20:28.652472+00:00] system.ERROR: Undefined variable $topCities occurred in /home/sites/39a/b/b05b06748e/public_html/url/app/controllers/user/StatsController.php:200 -> http://url.webtecheng.com/user/statistics/map  
+

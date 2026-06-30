@@ -1,0 +1,4 @@
+[2026-01-03T18:47:28.362585+00:00] system.ERROR: str_replace(): Passing null to parameter #2 ($replace) of type array|string is deprecated occurred in /home/sites/39a/b/b05b06748e/public_html/url/app/controllers/BlogController.php:238 -> http://url.webtecheng.com/blog/what-is-url-shortener?lang=en  
+
+[2026-01-03T19:01:57.266479+00:00] system.ERROR: Undefined property: stdClass::$force occurred in /home/sites/39a/b/b05b06748e/public_html/url/storage/themes/default/admin/settings/app.php:104 -> http://url.webtecheng.com/admin/settings/app  
+

@@ -1,0 +1,35 @@
+<IfModule mod_rewrite.c>
+	<IfModule mod_negotiation.c>
+		Options -MultiViews
+	</IfModule>	
+
+	RewriteEngine On
+
+	# HTTPS Enforcement - Redirect HTTP to HTTPS
+	RewriteCond %{HTTPS} off
+	RewriteCond %{HTTP:X-Forwarded-Proto} !https
+	RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+	RewriteCond %{HTTP:Authorization} ^(.*)
+	RewriteRule .* - [e=HTTP_AUTHORIZATION:%1]
+
+	RewriteCond %{REQUEST_FILENAME} !-d
+	RewriteCond %{REQUEST_FILENAME} !-f
+	RewriteRule ^(.*)$ index.php [QSA,NC,L]
+
+</IfModule>
+
+# Security Headers for SEO and Trust
+<IfModule mod_headers.c>
+	# Prevent clickjacking
+	Header always set X-Frame-Options "SAMEORIGIN"
+	
+	# XSS Protection
+	Header always set X-XSS-Protection "1; mode=block"
+	
+	# Prevent MIME type sniffing
+	Header always set X-Content-Type-Options "nosniff"
+	
+	# Referrer Policy
+	Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
